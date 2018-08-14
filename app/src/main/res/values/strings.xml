@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">BakingApp</string>
+
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="recipe_detail_args">recipe</string>
+    <string name="ingredients">Ingredients</string>
+    <string name="tablet_view">TabletLayout</string>
+
+    //fragment title bar names
+    <string name="main_activity">Baking App</string>
+    <string name="recipename">recipe_name</string>
+
+    //bundle args vars
+    <string name="step_url">StepUrl</string>
+    <string name="step_id">StepID</string>
+
+    <string name="next">Next Step</string>
+    <string name="prev">Previous Step</string>
+    <string name="video_not_available">Video Not Available</string>
+    <string name="mobile_layout">mobile</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="configure">Configure</string>
+    <string name="add_widget">Add widget</string>
+
+</resources>

@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Popular Movies App</string>
+    <string name="app_detail">Detail View</string>
+    <string name="welcome_screen_intro">Welcome to the Popular Movies App!</string>
+
+    <string name="network_connection_needed">Not connected to the network,
+        please ensure connectivity for the application to work</string>
+    <string name="poster">Poster</string>
+    <string name="movieplot">As the Avengers and their allies have continued to protect the world from threats too large for any one hero to handle, a new danger has emerged from the cosmic shadows: Thanos. A despot of intergalactic infamy, his goal is to collect all six Infinity Stones, artifacts of unimaginable power, and use them to inflict his twisted will on all of reality. Everything the Avengers have fought for has led up to this moment - the fate of Earth and existence itself has never been more uncertain.</string>
+    <string name="highest_rated_movies">Highest Rated Movies</string>
+    <string name="popular_movies">Popular Movies</string>
+    <string name="launch_the_app">Launch!</string>
+
+</resources>
