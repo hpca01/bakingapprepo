@@ -3,13 +3,16 @@ package com.example.hiren_pc_hp.bakingapp.ui;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.hiren_pc_hp.bakingapp.R;
 import com.example.hiren_pc_hp.bakingapp.network.Recipe;
+import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
@@ -22,10 +25,12 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         public TextView recipeName;
         public TextView recipeServings;
+        public ImageView imageView;
         OnItemClicked onItemClicked;
 
         public ViewHolder(View itemView, OnItemClicked itemclicklistener) {
             super(itemView);
+            imageView = itemView.findViewById(R.id.recipe_image);
             recipeName = (TextView)itemView.findViewById(R.id.recipe_name);
             recipeServings = (TextView)itemView.findViewById(R.id.recipe_servings);
             this.onItemClicked = itemclicklistener;
@@ -74,6 +79,9 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
         String servings = "Servings: "+String.valueOf(item.getServings());
         holder.recipeName.setText(name);
         holder.recipeServings.setText(servings);
+        if(!TextUtils.isEmpty(item.getImage())){
+            Picasso.with(holder.itemView.getContext()).load(item.getImage()).into(holder.imageView);
+        }
     }
 
     @Override

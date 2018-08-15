@@ -17,8 +17,6 @@ import android.widget.Button;
 
 import com.example.hiren_pc_hp.bakingapp.MainActivity;
 import com.example.hiren_pc_hp.bakingapp.R;
-import com.example.hiren_pc_hp.bakingapp.network.Ingredient;
-import com.example.hiren_pc_hp.bakingapp.network.Recipe;
 import com.example.hiren_pc_hp.bakingapp.network.Step;
 import com.example.hiren_pc_hp.bakingapp.ui.MyrecipeDetailRecyclerViewAdapter;
 import com.example.hiren_pc_hp.bakingapp.ui.UtilsForUi;
@@ -86,7 +84,6 @@ public class recipeDetailFragment extends Fragment {
         if (getArguments() != null) {
             mColumnCount = getArguments().getInt(ARG_COLUMN_COUNT);
         }
-
     }
 
 
@@ -107,6 +104,8 @@ public class recipeDetailFragment extends Fragment {
             TAG = getTag();
         }
         title.setToolBarTitle(TAG);
+        title.toggleBack(true);
+
         RecyclerView iview = (RecyclerView) view.findViewById(R.id.list);
 
         // Set the adapter

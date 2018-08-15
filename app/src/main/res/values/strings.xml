@@ -14,6 +14,8 @@
     //bundle args vars
     <string name="step_url">StepUrl</string>
     <string name="step_id">StepID</string>
+    <string name="play_when_ready">PlayWhenReady</string>
+    <string name="current_position">CurrentPosition</string>
 
     <string name="next">Next Step</string>
     <string name="prev">Previous Step</string>

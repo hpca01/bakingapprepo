@@ -1,18 +1,16 @@
 package com.example.hiren_pc_hp.bakingapp;
 
 import android.arch.lifecycle.ViewModelProviders;
-import android.os.PersistableBundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.os.Bundle;
-import android.util.Log;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.TextView;
+import android.support.v7.widget.Toolbar;
 
 
-import com.example.hiren_pc_hp.bakingapp.network.Ingredient;
 import com.example.hiren_pc_hp.bakingapp.network.Recipe;
 import com.example.hiren_pc_hp.bakingapp.network.Step;
 import com.example.hiren_pc_hp.bakingapp.ui.UtilsForUi;
@@ -22,25 +20,24 @@ import com.example.hiren_pc_hp.bakingapp.view.RecipeFragment;
 import com.example.hiren_pc_hp.bakingapp.view.StepFragment;
 import com.example.hiren_pc_hp.bakingapp.view.recipeDetailFragment;
 
-import java.util.List;
-
-import butterknife.BindView;
-
-public class MainActivity extends FragmentActivity implements recipeDetailFragment.OnListFragmentInteractionListener, RecipeFragment.recipeInteractionListener, UtilsForUi {
+public class MainActivity extends AppCompatActivity implements recipeDetailFragment.OnListFragmentInteractionListener, RecipeFragment.recipeInteractionListener, UtilsForUi {
 
     private boolean tabletLayout = false;//assume mobile layout
-    private TextView mToolBarTitle;
+    private Toolbar mToolBar;
     public RecipeViewModel recipeViewModel;
     private static final String TAG = "MainActivity";
 
     public static String STACK_RECIPE_DETAIL_TABLET = "recipe_detail_stack";
-
-
+    public boolean backEnabled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+        mToolBar = findViewById(R.id.toolbar);
+        setSupportActionBar(mToolBar);
 
         if(findViewById(R.id.linear_activity_layout).getTag() == getString(R.string.mobile_layout)){
             tabletLayout = false;
@@ -66,7 +63,7 @@ public class MainActivity extends FragmentActivity implements recipeDetailFragme
         }
 
         recipeViewModel = ViewModelProviders.of(this).get(RecipeViewModel.class );
-        mToolBarTitle = findViewById(R.id.toolbar_title);
+        //mToolBarTitle = findViewById(R.id.toolbar_title);
 
     }
 
@@ -133,7 +130,7 @@ public class MainActivity extends FragmentActivity implements recipeDetailFragme
 
     @Override
     public void setToolBarTitle(String fragtag) {
-        mToolBarTitle.setText(fragtag);
+        getSupportActionBar().setTitle(fragtag);
     }
 
     @Override
@@ -149,9 +146,30 @@ public class MainActivity extends FragmentActivity implements recipeDetailFragme
     }
 
     @Override
+    public boolean onSupportNavigateUp() {
+        FragmentManager fm = getSupportFragmentManager();
+        for(int i = 0; i< fm.getBackStackEntryCount(); i++){
+            fm.popBackStack();
+        }
+        RecipeFragment recipeFragment = new RecipeFragment();
+        replaceFragment(recipeFragment, false, null);
+        toggleBack(false);
+        return super.onSupportNavigateUp();
+    }
+
+    @Override
+    public void toggleBack(boolean enable) {
+        backEnabled = enable;
+        getSupportActionBar().setDisplayHomeAsUpEnabled(backEnabled);
+        getSupportActionBar().setDisplayShowHomeEnabled(backEnabled);
+
+    }
+
+    @Override
     public void onBackPressed() {
         super.onBackPressed();
-        mToolBarTitle.setText(getString(R.string.main_activity));
+        mToolBar.setTitle(getString(R.string.main_activity));
+        toggleBack(false);
         if(tabletLayout){
             Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.recipe_frag);
             if(currentFragment instanceof RecipeFragment){

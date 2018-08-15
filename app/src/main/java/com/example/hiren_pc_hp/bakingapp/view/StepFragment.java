@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,6 +40,7 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +71,9 @@ public class StepFragment extends Fragment {
     @BindView(R.id.next_button)
     Button nextButton;
 
+    @BindView(R.id.recipeImageView)
+    ImageView recipeImage;
+
     private SimpleExoPlayer mPlayer;
 
     //all steps related vars
@@ -76,6 +81,7 @@ public class StepFragment extends Fragment {
     String videoUrl;
     Step aStep;
     int currentPos;
+    long videoPosition = 0;
 
     Unbinder unbinder;
 
@@ -106,6 +112,7 @@ public class StepFragment extends Fragment {
             videoUrl=step.getVideoURL();
             aStep = step;
             currentPos = savedInstanceState.getInt(getString(R.string.step_id));
+            videoPosition= savedInstanceState.getLong(getString(R.string.current_position));
             getViewData();
 
         } else {
@@ -127,12 +134,20 @@ public class StepFragment extends Fragment {
         }
 
         textDescription.setText(aStep.getDescription());
+        loadImageIfExists();
 
         return rootview;
     }
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+    }
+
+    void loadImageIfExists(){
+        if(!TextUtils.isEmpty(aStep.getThumbnailURL())){
+            //non-empty image  url
+            Picasso.with(getActivity()).load(aStep.getThumbnailURL()).into(recipeImage);
+        }
     }
 
     void initPlayer(){
@@ -160,12 +175,21 @@ public class StepFragment extends Fragment {
         MediaSource videoSource = new ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(videoUri);
 
         mPlayer.prepare(videoSource);
-
+        if(videoPosition!=0){
+            mPlayer.seekTo(videoPosition);
+            mPlayer.setPlayWhenReady(true);
+            //reset positions = 0 for next rotation or next video
+            videoPosition = 0;
+        }
     }
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
+
+        long currentPosition=mPlayerView.getPlayer().getCurrentPosition();
+
+        outState.putLong(getString(R.string.current_position), currentPosition);
         outState.putInt(getString(R.string.step_id), currentPos);
         outState.putParcelable(getString(R.string.step_url), aStep);
     }
@@ -183,6 +207,7 @@ public class StepFragment extends Fragment {
             initPlayer();
         }
         textDescription.setText(aStep.getDescription());
+        loadImageIfExists();
     }
     @Override
     public void onPause() {
@@ -191,6 +216,13 @@ public class StepFragment extends Fragment {
             mPlayer.release();
             mPlayer=null;
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        initPlayer();
+
     }
 
     @Override
