@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,6 +40,7 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,6 +70,9 @@ public class StepFragment extends Fragment {
 
     @BindView(R.id.next_button)
     Button nextButton;
+
+    @BindView(R.id.recipeImageView)
+    ImageView recipeImage;
 
     private SimpleExoPlayer mPlayer;
 
@@ -129,12 +134,20 @@ public class StepFragment extends Fragment {
         }
 
         textDescription.setText(aStep.getDescription());
+        loadImageIfExists();
 
         return rootview;
     }
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+    }
+
+    void loadImageIfExists(){
+        if(!TextUtils.isEmpty(aStep.getThumbnailURL())){
+            //non-empty image  url
+            Picasso.with(getActivity()).load(aStep.getThumbnailURL()).into(recipeImage);
+        }
     }
 
     void initPlayer(){
@@ -194,6 +207,7 @@ public class StepFragment extends Fragment {
             initPlayer();
         }
         textDescription.setText(aStep.getDescription());
+        loadImageIfExists();
     }
     @Override
     public void onPause() {
