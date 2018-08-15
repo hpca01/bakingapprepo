@@ -76,6 +76,7 @@ public class StepFragment extends Fragment {
     String videoUrl;
     Step aStep;
     int currentPos;
+    long videoPosition = 0;
 
     Unbinder unbinder;
 
@@ -106,6 +107,7 @@ public class StepFragment extends Fragment {
             videoUrl=step.getVideoURL();
             aStep = step;
             currentPos = savedInstanceState.getInt(getString(R.string.step_id));
+            videoPosition= savedInstanceState.getLong(getString(R.string.current_position));
             getViewData();
 
         } else {
@@ -160,12 +162,21 @@ public class StepFragment extends Fragment {
         MediaSource videoSource = new ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(videoUri);
 
         mPlayer.prepare(videoSource);
-
+        if(videoPosition!=0){
+            mPlayer.seekTo(videoPosition);
+            mPlayer.setPlayWhenReady(true);
+            //reset positions = 0 for next rotation or next video
+            videoPosition = 0;
+        }
     }
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
+
+        long currentPosition=mPlayerView.getPlayer().getCurrentPosition();
+
+        outState.putLong(getString(R.string.current_position), currentPosition);
         outState.putInt(getString(R.string.step_id), currentPos);
         outState.putParcelable(getString(R.string.step_url), aStep);
     }
@@ -191,6 +202,13 @@ public class StepFragment extends Fragment {
             mPlayer.release();
             mPlayer=null;
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        initPlayer();
+
     }
 
     @Override
