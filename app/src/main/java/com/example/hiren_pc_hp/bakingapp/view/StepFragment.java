@@ -25,15 +25,21 @@ import com.example.hiren_pc_hp.bakingapp.R;
 import com.example.hiren_pc_hp.bakingapp.data.RecipeViewModel;
 import com.example.hiren_pc_hp.bakingapp.network.Step;
 import com.example.hiren_pc_hp.bakingapp.ui.UtilsForUi;
+import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DataSource;
@@ -44,6 +50,7 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -82,6 +89,7 @@ public class StepFragment extends Fragment {
     Step aStep;
     int currentPos;
     long videoPosition = 0;
+    final AtomicBoolean playBackState = new AtomicBoolean();
 
     Unbinder unbinder;
 
@@ -112,6 +120,7 @@ public class StepFragment extends Fragment {
             videoUrl=step.getVideoURL();
             aStep = step;
             currentPos = savedInstanceState.getInt(getString(R.string.step_id));
+            playBackState.set(savedInstanceState.getBoolean(getString(R.string.playback_state)));
             videoPosition= savedInstanceState.getLong(getString(R.string.current_position));
             getViewData();
 
@@ -135,7 +144,6 @@ public class StepFragment extends Fragment {
 
         textDescription.setText(aStep.getDescription());
         loadImageIfExists();
-
         return rootview;
     }
     @Override
@@ -175,10 +183,64 @@ public class StepFragment extends Fragment {
         MediaSource videoSource = new ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(videoUri);
 
         mPlayer.prepare(videoSource);
+        mPlayer.addListener(new Player.EventListener() {
+            @Override
+            public void onTimelineChanged(Timeline timeline, Object manifest) {
+
+            }
+
+            @Override
+            public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+
+            }
+
+            @Override
+            public void onLoadingChanged(boolean isLoading) {
+
+            }
+
+            @Override
+            public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+                playBackState.set(playWhenReady);
+            }
+
+            @Override
+            public void onRepeatModeChanged(int repeatMode) {
+
+            }
+
+            @Override
+            public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
+
+            }
+
+            @Override
+            public void onPlayerError(ExoPlaybackException error) {
+
+            }
+
+            @Override
+            public void onPositionDiscontinuity(int reason) {
+
+            }
+
+            @Override
+            public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
+
+            }
+
+            @Override
+            public void onSeekProcessed() {
+
+            }
+        });
+
         if(videoPosition!=0){
             mPlayer.seekTo(videoPosition);
-            mPlayer.setPlayWhenReady(true);
-            //reset positions = 0 for next rotation or next video
+            boolean play;
+            if(play=playBackState.get()){
+                mPlayer.setPlayWhenReady(play);
+            }
             videoPosition = 0;
         }
     }
@@ -186,9 +248,8 @@ public class StepFragment extends Fragment {
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-
         long currentPosition=mPlayerView.getPlayer().getCurrentPosition();
-
+        outState.putBoolean(getString(R.string.playback_state), playBackState.get());
         outState.putLong(getString(R.string.current_position), currentPosition);
         outState.putInt(getString(R.string.step_id), currentPos);
         outState.putParcelable(getString(R.string.step_url), aStep);
@@ -216,13 +277,6 @@ public class StepFragment extends Fragment {
             mPlayer.release();
             mPlayer=null;
         }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        initPlayer();
-
     }
 
     @Override
