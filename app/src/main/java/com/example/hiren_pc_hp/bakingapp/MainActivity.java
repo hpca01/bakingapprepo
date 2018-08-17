@@ -6,6 +6,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.support.v7.widget.Toolbar;
@@ -25,10 +26,17 @@ public class MainActivity extends AppCompatActivity implements recipeDetailFragm
     private boolean tabletLayout = false;//assume mobile layout
     private Toolbar mToolBar;
     public RecipeViewModel recipeViewModel;
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "Constraints";
 
     public static String STACK_RECIPE_DETAIL_TABLET = "recipe_detail_stack";
+
+    public static String STEP_FRAGMENT_SAVE = "step_frag";
+
     public boolean backEnabled = false;
+
+    public Bundle stepsBundle = new Bundle();
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements recipeDetailFragm
 
 
         mToolBar = findViewById(R.id.toolbar);
+
         setSupportActionBar(mToolBar);
 
         if(findViewById(R.id.linear_activity_layout).getTag() == getString(R.string.mobile_layout)){
@@ -60,6 +69,17 @@ public class MainActivity extends AppCompatActivity implements recipeDetailFragm
         if(savedInstanceState == null) {
             RecipeFragment recipeFragment = new RecipeFragment();
             replaceFragment(recipeFragment, false, null);
+        }else {
+            if(savedInstanceState.containsKey(getString(R.string.stepBundle))){
+                Log.d(TAG, "onCreate: MAIN steps bundle");
+                stepsBundle = savedInstanceState.getBundle(getString(R.string.stepBundle));
+                Fragment stepFrag = getSupportFragmentManager().findFragmentById(R.id.recipe_frag);
+                boolean playing = stepsBundle.getBoolean(getString(R.string.playback_state));
+                int stepID = stepsBundle.getInt(getString(R.string.step_id));
+                Step astep = stepsBundle.getParcelable(getString(R.string.step_url));
+                long playbackPosition = stepsBundle.getLong(getString(R.string.current_position));
+                ((StepFragment) stepFrag).setValues(astep, stepID, playbackPosition, playing);
+            }
         }
 
         recipeViewModel = ViewModelProviders.of(this).get(RecipeViewModel.class );
@@ -166,6 +186,11 @@ public class MainActivity extends AppCompatActivity implements recipeDetailFragm
     }
 
     @Override
+    public void postStepsState(Bundle aBundle) {
+        stepsBundle = aBundle;
+    }
+
+    @Override
     public void onBackPressed() {
         super.onBackPressed();
         mToolBar.setTitle(getString(R.string.main_activity));
@@ -180,11 +205,65 @@ public class MainActivity extends AppCompatActivity implements recipeDetailFragm
     }
 
     @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if(savedInstanceState!=null) {
+            Fragment fragment = getSupportFragmentManager().getFragment(savedInstanceState, STEP_FRAGMENT_SAVE);
+            if (fragment instanceof StepFragment) {
+                stepsBundle = savedInstanceState.getBundle(getString(R.string.stepBundle));
+                boolean playing = stepsBundle.getBoolean(getString(R.string.playback_state));
+                int stepID = stepsBundle.getInt(getString(R.string.step_id));
+                Step astep = stepsBundle.getParcelable(getString(R.string.step_url));
+                long playbackPosition = stepsBundle.getLong(getString(R.string.current_position));
+                Log.d(TAG, String.format("onRestoreInstanceState: MAIN ACTIVITY restore state %s, %d, %s, %d", playing, stepID, astep.getShortDescription(), playbackPosition));
+                //((StepFragment)fragment).refreshStep(astep.getId());
+            }
+        }
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         //need to save the visibility of detail frag no t the last fragment.
-        if(tabletLayout){outState.putInt("detail_frag_state", findViewById(R.id.detail_frag).getVisibility());}
+        Log.d(TAG, "onSaveInstanceState: MAIN ACTIVITY  onsaveinstance state called");
+        if(tabletLayout){
+            outState.putInt("detail_frag_state", findViewById(R.id.detail_frag).getVisibility());
+        }else{
+            Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.recipe_frag);
+            if(fragment instanceof StepFragment){
+                Log.d(TAG, "onSaveInstanceState: MAIN bundle found");
+                getSupportFragmentManager().putFragment(outState, STEP_FRAGMENT_SAVE, fragment);
+                outState.putBundle(getString(R.string.stepBundle), stepsBundle);
+            }
 
-
+        }
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop: MAIN on stop called");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart: MAIN on start called");
+        Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.recipe_frag);
+        if(fragment instanceof StepFragment){
+            fragment.setArguments(this.stepsBundle);
+            boolean playing = stepsBundle.getBoolean(getString(R.string.playback_state));
+            int stepID = stepsBundle.getInt(getString(R.string.step_id));
+            Step astep = stepsBundle.getParcelable(getString(R.string.step_url));
+            long playbackPosition = stepsBundle.getLong(getString(R.string.current_position));
+            ((StepFragment)fragment).setValues(astep, stepID, playbackPosition, playing);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume: MAIN on resume called");
+    }
+    
 }
