@@ -109,31 +109,19 @@ public class StepFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-
         final View rootview = inflater.inflate(R.layout.fragment_step, container, false);
         unbinder = ButterKnife.bind(this, rootview);
-
-        if(savedInstanceState!= null){
-            Log.d(TAG, "onCreateView: resuming from instancestate return ");
-            Step step = savedInstanceState.getParcelable(getString(R.string.step_url));
-            videoUrl=step.getVideoURL();
-            aStep = step;
-            currentPos = savedInstanceState.getInt(getString(R.string.step_id));
-            playBackState.set(savedInstanceState.getBoolean(getString(R.string.playback_state)));
-            videoPosition= savedInstanceState.getLong(getString(R.string.current_position));
-            getViewData();
-            Log.d(TAG, "onCreateView: playback state "+playBackState.get());
-            Log.d(TAG, "onCreateView: videoposition "+videoPosition);
-        } else {
-            Log.d(TAG, "onCreateView: resuming from normal state");
-            Bundle args = getArguments();
-            if (args != null) {
-                aStep = args.getParcelable(getString(R.string.step_url));
-                getViewData();
-                //Step default videourl, for the first step, in case view model takes too long to load
-                videoUrl = aStep.getVideoURL();
-                currentPos = aStep.getId();
-            }
+        getViewData();
+        if(TextUtils.isEmpty(videoUrl)){
+            imageView.setVisibility(View.VISIBLE);
+            mPlayerView.setVisibility(GONE);
+            loadImageIfExists();
+            loadText();
+        }else{
+            imageView.setVisibility(View.GONE);
+            mPlayerView.setVisibility(View.VISIBLE);
+            loadImageIfExists();
+            loadText();
         }
         return rootview;
     }
@@ -141,7 +129,23 @@ public class StepFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate: called saved instance is "+(savedInstanceState!=null));
+        getViewData();
+        if (savedInstanceState != null) {
+            Log.d(TAG, "onCreate: no savedinstance state");
+            aStep = savedInstanceState.getParcelable(getString(R.string.step_url));
+            videoUrl = aStep.getVideoURL();
+            playBackState.set(savedInstanceState.getBoolean(getString(R.string.playback_state)));
+            videoPosition = savedInstanceState.getLong(getString(R.string.current_position));
+            currentPos = aStep.getId();
+        } else {
+            Log.d(TAG, "onCreate: FRAGMENT FIRST CALL");
+            Bundle args = getArguments();
+            if (args != null) {
+                aStep = args.getParcelable(getString(R.string.step_url));
+                videoUrl = aStep.getVideoURL();
+                currentPos = aStep.getId();
+            }
+        }
     }
 
     @Override
@@ -149,14 +153,7 @@ public class StepFragment extends Fragment {
         uiUtils = (MainActivity)getActivity();
         super.onStart();
         if (Util.SDK_INT > 23) {
-            getViewData();
-            Log.d(TAG, "onStart: onstart called");
-            //todo log these vars to see which bundle is coming through
-            //videoPosition=bundle.getLong(getString(R.string.current_position));
-            //layBackState.set(bundle.getBoolean(getString(R.string.playback_state)));
-            //currentPos = bundle.getInt(getString(R.string.step_id));
-            //Log.d(TAG, String.format("onStart: %d, %s, %d", videoPosition, playBackState.get(), currentPos));
-            //refreshStep(currentPos);
+           initPlayer();
         }
     }
 
@@ -164,27 +161,24 @@ public class StepFragment extends Fragment {
     public void onResume() {
         super.onResume();
         if (Util.SDK_INT <= 23 || mPlayer == null) {
-            Log.d(TAG, "onResume: onResume called ");
-            //onstart takes care of the re-initializing the player
-            if(getArguments()!=null){
-
-                Log.d(TAG, "onResume:  "+getArguments().toString());
-                refreshStep(currentPos);
-            }
+           initPlayer();
         }
     }
 
     void loadImageIfExists(){
         if(!TextUtils.isEmpty(aStep.getThumbnailURL())){
-            //non-empty image  url
             Picasso.with(getActivity()).load(aStep.getThumbnailURL()).into(recipeImage);
         }
     }
 
+    void loadText(){
+        if(!TextUtils.isEmpty(aStep.getDescription())){
+            textDescription.setText(aStep.getDescription());
+        }
+    }
+
     void initPlayer(){
-        //only execute if null
         if (mPlayer != null) {
-            //do nothing if not null
             Log.d(TAG, "initPlayer: player is  not null ");
             return;
         }
@@ -234,6 +228,7 @@ public class StepFragment extends Fragment {
             @Override
             public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
                 playBackState.set(playWhenReady);
+                videoPosition = mPlayer.getCurrentPosition();
             }
 
             @Override
@@ -263,7 +258,7 @@ public class StepFragment extends Fragment {
 
             @Override
             public void onSeekProcessed() {
-
+                videoPosition = mPlayer.getCurrentPosition();
             }
         });
         if (videoPosition != 0) {
@@ -278,7 +273,7 @@ public class StepFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
-        Log.d(TAG, "onSaveInstanceState: called ");
+        Log.d(TAG, "onSaveInstanceState: FRAGMENT called ");
         super.onSaveInstanceState(outState);
         outState.putBoolean(getString(R.string.playback_state), playBackState.get());
         outState.putInt(getString(R.string.step_id), currentPos);
@@ -287,43 +282,38 @@ public class StepFragment extends Fragment {
         if(mPlayerView.getPlayer()!= null){
             long currentPosition=mPlayerView.getPlayer().getCurrentPosition();
             outState.putLong(getString(R.string.current_position), currentPosition);
-            Log.d(TAG, "onSaveInstanceState: called video Position "+mPlayerView.getPlayer().getCurrentPosition());
         }
         uiUtils.postStepsState(outState);
-        Log.d(TAG, "onSaveInstanceState: called playback state "+playBackState.get());
-
-
     }
 
     public void refreshStep(int positionToGo){
         if(!allSteps.isEmpty()){
             aStep = allSteps.get(positionToGo);
-            Log.d(TAG, "refreshStep: is full");
+            Log.d(TAG, "refreshStep: FRAGMENT stepsDATA is full");
         }
         videoUrl = aStep.getVideoURL();
         if(mPlayer!=null){
             //release player between switching of views
             releasePlayer();
         }
-        if(this.videoUrl.isEmpty()){
+        if(TextUtils.isEmpty(videoUrl)){
             //put up image
             mPlayerView.setVisibility(GONE);
             imageView.setVisibility(View.VISIBLE);
-            initPlayer();
         }else{
             mPlayerView.setVisibility(View.VISIBLE);
             imageView.setVisibility(GONE);
             initPlayer();
         }
-        textDescription.setText(aStep.getDescription());
         loadImageIfExists();
+        loadText();
     }
 
     @Override
     public void onPause() {
         super.onPause();
         if(Util.SDK_INT <= 23) {
-            Log.d(TAG, "onPause: called");
+            Log.d(TAG, "onPause: FRAGMENT called");
             releasePlayer();
         }
     }
@@ -332,7 +322,7 @@ public class StepFragment extends Fragment {
     public void onStop() {
         super.onStop();
         if (Util.SDK_INT > 23) {
-            Log.d(TAG, "onStop: called");
+            Log.d(TAG, "onStop: FRAGMENT called");
             releasePlayer();
         }
     }
@@ -349,6 +339,8 @@ public class StepFragment extends Fragment {
         Toast.makeText(getActivity(), "Next current pos "+currentPos, Toast.LENGTH_LONG).show();
         if(allSteps.size()+1>currentPos) {//is current pos greater than the size of the steps?
             refreshStep(currentPos);
+            playBackState.set(false);
+            videoPosition=0;
         }
     }
 
@@ -357,8 +349,6 @@ public class StepFragment extends Fragment {
             mPlayer.stop();
             mPlayer.release();
             mPlayer=null;
-            playBackState.set(false);
-            videoPosition=0;
         }
     }
 
@@ -368,12 +358,8 @@ public class StepFragment extends Fragment {
         Toast.makeText(getActivity(), "Prev current pos "+currentPos, Toast.LENGTH_LONG).show();
         if(currentPos>=0){//is currentpos greater than 0?
             refreshStep(currentPos);
+            playBackState.set(false);
+            videoPosition=0;
         }
-    }
-    public void setValues(Step step, int pos, long videoPos, boolean playState){
-        aStep = step;
-        currentPos = pos;
-        videoPosition = videoPos;
-        playBackState.set(playState);
     }
 }
