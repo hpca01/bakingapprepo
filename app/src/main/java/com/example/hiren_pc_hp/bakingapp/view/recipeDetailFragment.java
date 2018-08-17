@@ -106,7 +106,7 @@ public class recipeDetailFragment extends Fragment {
         title.setToolBarTitle(TAG);
         title.toggleBack(true);
 
-        RecyclerView iview = (RecyclerView) view.findViewById(R.id.list);
+        RecyclerView iview = view.findViewById(R.id.list);
 
         // Set the adapter
         if (iview instanceof RecyclerView) {
@@ -149,6 +149,7 @@ public class recipeDetailFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+        title=null;
     }
 
     @Override
